@@ -1,0 +1,438 @@
+<html>
+<head>
+<title>
+check_RDG
+</title>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!--
+source:315
+-->
+<style>
+table 
+{
+	border-collapse: collapse;
+	border: 1px solid black;
+}
+td 
+{
+	border: 1px solid black;
+	padding: 5px;
+	display: table-cell;
+	vertical-align: top; 
+}
+</style>
+<!--
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/F9D5ADC0-1EFE-1947-8B58-B1045B397693/main.js" charset="UTF-8"></script></head>
+-->
+<body>
+<h1></h1>
+Cet outil va chercher un ou plusieurs mots dans les zones "publisher" et "producers" des datasets RechercheDataGouv
+<br/>
+<br/>
+<div id="test_spot"></div>
+<div id="form_spot"></div>
+<div id="dashboard_spot" style="display:none">
+<table>
+<tr>
+<td>
+<span id="on">0</span>
+/
+<span id="to">0</span>&nbsp;datasets examinés
+</td>
+</tr>
+</table>
+</div>
+<div id="results_spot" style="display:none"></div>
+<script>
+var current_year=new Date().getFullYear();
+var time_span=3;
+var per_page=100; // max : 1000
+
+var text="";
+var text_as_array=new Array();
+var types=["dataverse","dataset","file"];
+
+var url="";
+var number_of_steps=0;
+var total_count=0;
+var counter=0;
+
+var query_bit="";
+
+var dataset_data_object=new Object();
+var dataverse_data_object=new Object();
+var data_structure_object=new Object();
+
+// input de texte
+
+var input=document.createElement("input");
+input.id = "text";
+input.type = "text";
+input.value = "saclay versailles evry";
+document.getElementById("form_spot").appendChild(input);
+
+var provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+
+/*
+// input de types
+
+for (var i = 0; i < types.length; i++) 
+{
+	var provisional_input=document.createElement("input");
+	provisional_input.type="checkbox";
+	provisional_input.id=types[i];
+	provisional_input.name=types[i];
+	provisional_input.value=types[i];
+	provisional_input.defaultChecked = true;
+	var provisional_label=document.createElement("label");
+	provisional_label.for=types[i];
+	provisional_label.innerHTML=types[i];
+	document.getElementById("form_spot").appendChild(provisional_input);
+	document.getElementById("form_spot").appendChild(provisional_label);
+}		
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+*/
+
+// date de départ
+
+var start_year_selection=document.createElement("select");
+start_year_selection.id = "start_year_selection";
+var i=current_year-time_span
+while (i<=current_year)
+{
+	var option = document.createElement("option");
+	option.text = i;
+	option.value = i;
+	start_year_selection.appendChild(option);
+	i++;
+}
+
+var provisional_form_label=document.createElement("label");
+provisional_form_label.for="start_year_selection";
+provisional_form_label.innerHTML="date de début&nbsp;:&nbsp;";
+document.getElementById("form_spot").appendChild(provisional_form_label);
+
+document.getElementById("form_spot").appendChild(start_year_selection);
+
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+
+// date de fin
+var end_year_selection=document.createElement("select");
+end_year_selection.id = "end_year_selection";
+i=current_year
+while (i>=current_year-time_span)
+{
+	var option = document.createElement("option");
+	option.text = i;
+	option.value = i;
+	end_year_selection.appendChild(option);
+	i--;
+}
+
+provisional_form_label=document.createElement("label");
+provisional_form_label.for="start_year_selection";
+provisional_form_label.innerHTML="date de fin&nbsp;:&nbsp;";
+document.getElementById("form_spot").appendChild(provisional_form_label);
+
+document.getElementById("form_spot").appendChild(end_year_selection);
+
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+
+// bouton d'envoi
+input=document.createElement("input");
+input.id = "submit_button";
+input.type = "submit";
+input.onclick = function () 
+{
+    send_function();
+};
+document.getElementById("form_spot").appendChild(input);
+
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+provisional_br=document.createElement("br");
+document.getElementById("form_spot").appendChild(provisional_br);
+
+function send_function()
+{
+// purge :
+
+	text="";
+	text_as_array=new Array();
+	types=["dataverse","dataset","file"];
+
+	url="";
+	number_of_steps=0;
+	total_count=0;
+	counter=0;
+
+	query_bit="";
+
+	dataset_data_object=new Object();
+	dataverse_data_object=new Object();
+	data_structure_object=new Object();
+	document.getElementById("on").innerHTML=0;
+	document.getElementById("to").innerHTML=0;
+	document.getElementById("results_spot").innerHTML="";
+	document.getElementById("results_spot").style.display="none";	
+
+	text=document.getElementById("text").value;
+	text=text.trim();
+	if (text=="")
+	{
+		text="*";
+	}
+	else
+	{
+		while (text.indexOf("  ")!==-1)
+		{
+			text = text.replaceAll("  "," ");
+		}		
+	}
+	text_as_array=text.split(" ");
+	url+="https://entrepot.recherche.data.gouv.fr/api/search";
+	url+="?per_page=";
+	url+=per_page;
+	url+="&sort=id&order=asc";
+	url+="&start=";
+	query_bit+="&q=*&fq=dateSort:[";
+	query_bit+=document.getElementById("start_year_selection").value;
+	query_bit+="-01-01T00:00:00Z+TO+";
+	query_bit+=document.getElementById("end_year_selection").value;
+	query_bit+="-12-31T00:00:00Z]&type=dataset";
+	document.getElementById("submit_button").style.display="none";	
+	document.getElementById("dashboard_spot").style.display="block";
+	get_data_function(0);
+}
+
+function can_data_function(one_array_of_items)
+{
+/*
+name
+name_of_dataverse
+identifier_of_dataverse
+url
+description
+publisher
+producers
+*/
+	for (var j = 0; j < one_array_of_items.length; j++) 
+	{
+// si un des éléments dans text_as_array est présent dans l'item under
+// scrutiny (one_array_of_items[i])
+		for (var i = 0; i < text_as_array.length; i++) 
+		{
+			if (one_array_of_items[j]["publisher"].toLowerCase().indexOf(text_as_array[i].toLowerCase())!=-1)
+			{
+// si le dataverse n'a jamais été rencontré
+//alert(JSON.stringify(one_array_of_items[j]["publisher"]));
+				if (dataverse_data_object[one_array_of_items[j]["identifier_of_dataverse"]]===undefined)
+				{
+					dataverse_data_object[one_array_of_items[j]["identifier_of_dataverse"]]=new Object();
+					dataverse_data_object[one_array_of_items[j]["identifier_of_dataverse"]]["name_of_dataverse"]=one_array_of_items[j]["name_of_dataverse"];
+					data_structure_object[one_array_of_items[j]["identifier_of_dataverse"]]=new Array();
+				}
+// si le dataset n'a jamais été rencontré
+				if (dataset_data_object[one_array_of_items[j]["url"]]===undefined)
+				{
+					dataset_data_object[one_array_of_items[j]["url"]]=new Object();
+					dataset_data_object[one_array_of_items[j]["url"]]["name"]=one_array_of_items[j]["name"];					
+					dataset_data_object[one_array_of_items[j]["url"]]["description"]=one_array_of_items[j]["description"];					
+					if (data_structure_object[one_array_of_items[j]["identifier_of_dataverse"]].indexOf(one_array_of_items[j]["url"])!=-1)
+					{
+					}
+					data_structure_object[one_array_of_items[j]["identifier_of_dataverse"]].push(one_array_of_items[j]["url"]);
+				}
+				dataset_data_object[one_array_of_items[j]["url"]]["publisher"]=one_array_of_items[j]["publisher"];					
+			}
+			if (one_array_of_items[j]["producers"]!==undefined)
+			{
+
+					for (var k = 0; k < one_array_of_items[j]["producers"].length; k++) 
+					{
+						if (one_array_of_items[j]["producers"][k].toLowerCase().indexOf(text_as_array[i].toLowerCase())!=-1)
+						{
+// si le dataverse n'a jamais été rencontré
+//alert(JSON.stringify(one_array_of_items[j]["producers"][k]));
+							if (dataverse_data_object[one_array_of_items[j]["identifier_of_dataverse"]]===undefined)
+							{
+								dataverse_data_object[one_array_of_items[j]["identifier_of_dataverse"]]=new Object();
+								dataverse_data_object[one_array_of_items[j]["identifier_of_dataverse"]]["name_of_dataverse"]=one_array_of_items[j]["name_of_dataverse"];
+								data_structure_object[one_array_of_items[j]["identifier_of_dataverse"]]=new Array();
+							}
+// si le dataset n'a jamais été rencontré
+							if (dataset_data_object[one_array_of_items[j]["url"]]===undefined)
+							{
+								dataset_data_object[one_array_of_items[j]["url"]]=new Object();
+								dataset_data_object[one_array_of_items[j]["url"]]["name"]=one_array_of_items[j]["name"];					
+								dataset_data_object[one_array_of_items[j]["url"]]["description"]=one_array_of_items[j]["description"];					
+								if (data_structure_object[one_array_of_items[j]["identifier_of_dataverse"]].indexOf(one_array_of_items[j]["url"])!=-1)
+								{
+								}
+								data_structure_object[one_array_of_items[j]["identifier_of_dataverse"]].push(one_array_of_items[j]["url"]);
+							}
+							dataset_data_object[one_array_of_items[j]["url"]]["producers"]=one_array_of_items[j]["producers"][k];					
+						}
+					}
+			}
+		}
+	}
+}
+
+async function get_data_function(page)
+{
+	try 
+	{
+		var this_url=page*per_page;
+		var this_url=url+this_url+query_bit;
+		response = await fetch(this_url);
+		if (page==0)
+		{
+		}
+	}
+	catch  
+	{
+		alert("pb de connexion à l'API");
+	}
+// Uses the 'optional chaining' operator
+	if (response?.ok) 
+	{
+		let response_as_text;
+		try 
+		{
+			response_as_text = await response.text();
+		}
+		catch  
+		{
+			alert("réponse non reçue");
+		}
+		if (response_as_text!="") 
+		{
+			var response_as_object = JSON.parse(response_as_text);
+			if (page==0)
+			{
+				total_count=response_as_object["data"]["total_count"];
+				if (total_count>per_page)
+				{
+					number_of_steps=Math.floor(total_count/per_page);	
+					document.getElementById("to").innerHTML=total_count;	
+				}				
+			}
+			if (page<number_of_steps)
+			{
+				page++;
+				get_data_function(page);
+			}
+			for (var j = 0; j < response_as_object["data"]["items"].length; j++) 
+			{
+				counter++;
+				document.getElementById("on").innerHTML=counter;
+				can_data_function(response_as_object["data"]["items"]);
+				if (counter==total_count)
+				{
+					document.getElementById("dashboard_spot").style.display="none";
+					document.getElementById("submit_button").style.display="block";	
+					display_data_function();
+				}
+			}
+		}
+	}
+}
+
+function display_data_function()
+{
+//document.getElementById("test_spot").innerHTML+=JSON.stringify(dataset_data_object)+"<br/>";
+	var provisional_table=document.createElement("table");
+	if (JSON.stringify(dataset_data_object)=="{}")
+	{
+		var provisional_tr=document.createElement("tr");
+		var provisional_td=document.createElement("td");
+		provisional_td.innerHTML="pas de réponses";
+		provisional_tr.appendChild(provisional_td);
+		provisional_table.appendChild(provisional_tr);
+	}
+	else
+	{
+		var provisional_tr=document.createElement("tr");
+		var provisional_td=document.createElement("td");
+		provisional_td.innerHTML="dataverses";
+		provisional_tr.appendChild(provisional_td);
+		var provisional_td=document.createElement("td");
+		provisional_td.innerHTML="datasets";
+		provisional_tr.appendChild(provisional_td);
+		provisional_table.appendChild(provisional_tr);
+		for (const [key_01, value_01] of Object.entries(data_structure_object))
+		{
+			var provisional_tr=document.createElement("tr");
+			var provisional_td=document.createElement("td");
+			provisional_td.innerHTML=dataverse_data_object[key_01]["name_of_dataverse"];
+			provisional_tr.appendChild(provisional_td);
+			var provisional_td=document.createElement("td");
+			for (var j = 0; j < value_01.length; j++) 
+			{
+				var provisional_table_02=document.createElement("table");
+				var provisional_tr_02=document.createElement("tr");
+				var provisional_td_02=document.createElement("td");
+				var provisional_a=document.createElement("a");
+				provisional_a.setAttribute("href", value_01[j]);
+				provisional_a.setAttribute("target", "_blank");
+				provisional_a.innerHTML=dataset_data_object[value_01[j]]["name"];
+				provisional_td_02.appendChild(provisional_a);
+				provisional_tr_02.appendChild(provisional_td_02);
+				provisional_table_02.appendChild(provisional_tr_02);
+
+				var provisional_tr_02=document.createElement("tr");
+				var provisional_td_02=document.createElement("td");
+				provisional_td_02.innerHTML=dataset_data_object[value_01[j]]["description"];
+				provisional_tr_02.appendChild(provisional_td_02);
+				provisional_table_02.appendChild(provisional_tr_02);
+
+				var provisional_tr_02=document.createElement("tr");
+				var provisional_td_02=document.createElement("td");
+				provisional_td_02.innerHTML="publisher:"+dataset_data_object[value_01[j]]["publisher"];
+				provisional_tr_02.appendChild(provisional_td_02);
+				provisional_table_02.appendChild(provisional_tr_02);
+
+				var provisional_tr_02=document.createElement("tr");
+				var provisional_td_02=document.createElement("td");
+				provisional_td_02.innerHTML="producers:"+dataset_data_object[value_01[j]]["producers"];
+				provisional_tr_02.appendChild(provisional_td_02);
+				provisional_table_02.appendChild(provisional_tr_02);
+
+				provisional_td.appendChild(provisional_table_02);
+				var provisional_br=document.createElement("br");
+				provisional_td.appendChild(provisional_br);
+			}
+			provisional_tr.appendChild(provisional_td);
+			provisional_table.appendChild(provisional_tr);
+		}
+	}
+	document.getElementById("results_spot").appendChild(provisional_table);
+	document.getElementById("results_spot").style.display="block";
+}
+</script>
+</body>
+</html>
