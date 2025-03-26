@@ -14,7 +14,7 @@ HTML, JavaScript
 <br/><br/>
 N'importe quel browser permet d'utiliser le code
 <h2>Fichiers</h2>
-Pour permettre une instalation la plus facile possible tout le code (toutes les fonctions) se trouve dans un seul fichier, xxx.html
+Pour permettre une instalation la plus facile possible tout le code (toutes les fonctions) se trouve dans un seul fichier, check_RDG.html.html
 <h2>Dépendance</h2>
 L'outil est dépendant des API de Recheche Data Gouv telle qu'elles existent aujourd'hui (mars 2025) avec le point d'entrée https://entrepot.recherche.data.gouv.fr/api/search
 <h2>Fonctionnement, fonctions</h2>
